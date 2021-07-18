@@ -1,0 +1,18 @@
+version: "2.1"
+services:
+  smokeping:
+    image: ghcr.io/linuxserver/smokeping
+    container_name: smokeping
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - smokeping/config:/config
+      - smokeping/data:/data
+    ports:
+      - 8181:80
+    restart: unless-stopped
+volumes:
+  smokeping:
+    driver: local
