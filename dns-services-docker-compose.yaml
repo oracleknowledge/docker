@@ -1,0 +1,55 @@
+version: '2'
+
+services:
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    hostname: pi-hole
+    mac_address: d0:ca:ab:cd:ef:01
+    ports:
+      - 443/tcp
+      - 53/tcp
+      - 53/udp
+      - 80/tcp
+      - 22/tcp
+    environment:
+      ServerIP: 192.168.1.229
+      WEBPASSWORD: ${WEBPASSWORD}
+      # configure pihole to use unbound as its DNS server below
+      DNS1: 192.168.1.230
+    volumes:
+      - pihole/volume:/etc/pihole:rw
+      - pihole/config/hosts:/etc/hosts:ro
+      - pihole/config/resolv.conf:/etc/resolv.conf:ro
+      - pihole/config/dnsmasq.conf:/etc/dnsmasq.d/02-network.conf:ro
+      - pihole/config/pihole-FTL.conf:/etc/pihole/pihole-FTL.conf:ro
+    networks:
+      home:
+        ipv4_address: 192.168.1.229
+    restart: always
+  unbound:
+    container_name: unbound
+    image: mvance/unbound:latest
+    hostname: syn-unbound
+    mac_address: d0:ca:ab:cd:ef:02
+    ports:
+      - 53/tcp
+      - 53/udp
+    networks:
+      home:
+        ipv4_address: 192.168.1.230
+    restart: always
+# These hosts will have their own ip addresses on the local network, we need to build out a new network with ip addresses on it
+networks:
+  home:
+    driver: macvlan
+    driver_opts:
+      parent: enp1s0
+    ipam:
+      config:
+        - subnet: 192.168.1.0/24
+          gateway: 192.168.1.254
+          ip_range: 192.168.1.228/30 # 192.168.1.229 and 192.168.1.230
+volumes:
+  pihole:
+    driver: local
