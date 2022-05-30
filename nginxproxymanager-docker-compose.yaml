@@ -11,22 +11,27 @@ services:
       DB_MYSQL_HOST: "db"
       DB_MYSQL_PORT: 3306
       DB_MYSQL_USER: "npm"
-      DB_MYSQL_PASSWORD: "<something_secret>"
+      DB_MYSQL_PASSWORD: "npm"
       DB_MYSQL_NAME: "npm"
       DISABLE_IPV6: 'true'
     volumes:
-      - nginxproxymanager/data:/data
-      - nginxproxymanager/letsencrypt:/etc/letsencrypt
+      - nginxproxymanager:/data
+      - nginxproxymanagercerts:/etc/letsencrypt
     depends_on:
       - db
   db:
     image: 'jc21/mariadb-aria:latest'
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: '<something_super_secret>'
+      MYSQL_ROOT_PASSWORD: 'npm'
       MYSQL_DATABASE: 'npm'
       MYSQL_USER: 'npm'
-      MYSQL_PASSWORD: '<something_secret>'
+      MYSQL_PASSWORD: 'npm'
       DISABLE_IPV6: 'true'
     volumes:
-      - nginxproxymanager/data/mysql:/var/lib/mysql
+      - nginxproxymanagerdb:/var/lib/mysql
+
+volumes:
+  nginxproxymanager:
+  nginxproxymanagercerts:
+  nginxproxymanagerdb:
