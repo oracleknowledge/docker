@@ -1,0 +1,84 @@
+version: '3'
+services:
+  homeassistant:
+    container_name: homeassistant
+    image: "ghcr.io/home-assistant/home-assistant:stable"
+    volumes:
+      - homeassistant:/config
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    privileged: true
+    network_mode: host
+    depends_on:
+      - mariadb
+      - mosquitto
+
+  mosquitto:
+    image: eclipse-mosquitto
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "1884:1884"
+    volumes:
+      - mosquitto:/mosquitto/config
+      - mosquittodata:/mosquitto/data
+      - mosquittolog:/mosquitto/log
+    environment:
+      - TZ=America/New_York
+
+  mariadb:
+    image: linuxserver/mariadb
+    container_name: mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "1q2w3e4r5t6y7u8i9o0p"
+      MYSQL_DATABASE: ha_db
+      MYSQL_USER: homeassistant
+      MYSQL_PASSWORD: "0p9o8i7u6y5t4r3e2w1q"
+      PUID: 1000
+      PGID: 1000
+    volumes:
+      - mariadbconfig:/config
+      - mariadbdata:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  zwavejs2mqtt:
+    container_name: zwavejs2mqtt
+    image: zwavejs/zwavejs2mqtt:latest
+    restart: always
+    tty: true
+    stop_signal: SIGINT
+    environment:
+      - SESSION_SECRET=mysupersecretkey
+      - TZ=America/New_York
+    devices:
+      - '/dev/serial/by-id/usb-0658_0200-if00:/dev/ttyACM0'
+    volumes:
+      - zwavejs2mqtt:/usr/src/app/store
+    ports:
+      - '8091:8091' # port for web interface
+      - '3000:3000' # port for zwave-js websocket server
+
+  hass-configurator:
+    image: "causticlab/hass-configurator-docker:latest"
+    container_name: hass-configurator
+    restart: unless-stopped
+    ports:
+      - "3218:3218/tcp"
+    depends_on:
+      - homeassistant
+    volumes:
+      - hassconfigurator:/config
+      - homeassistant:/haas-config
+
+volumes:
+  homeassistant:
+  mosquitto:
+  mosquittodata:
+  mosquittolog:
+  zwavejs2mqtt:
+  mariadbconfig:
+  mariadbdata:
+  hassconfigurator:
